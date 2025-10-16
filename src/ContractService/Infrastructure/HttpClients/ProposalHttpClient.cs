@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+
 using ContractService.Domain.Ports;
 
 namespace ContractService.Infrastructure.HttpClients;

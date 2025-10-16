@@ -1,6 +1,7 @@
 using ContractService.Domain.Entities;
 using ContractService.Domain.Ports;
 using ContractService.Infrastructure.Persistence;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace ContractService.Infrastructure.Repositories;

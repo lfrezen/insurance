@@ -1,5 +1,6 @@
 using ContractService.Domain.Entities;
 using ContractService.Infrastructure.Persistence.Configurations;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace ContractService.Infrastructure.Persistence;
