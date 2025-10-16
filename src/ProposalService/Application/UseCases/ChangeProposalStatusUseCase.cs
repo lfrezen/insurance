@@ -30,7 +30,7 @@ public class ChangeProposalStatusUseCase
             if (proposal == null)
                 return Result<ProposalResponse>.Failure("Proposal not found.");
 
-            switch (request.NewStatus)
+            switch (request.Status)
             {
                 case ProposalStatus.Aprovada:
                     proposal.Approve();

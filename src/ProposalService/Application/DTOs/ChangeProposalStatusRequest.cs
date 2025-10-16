@@ -4,5 +4,5 @@ namespace ProposalService.Application.DTOs;
 
 public record ChangeProposalStatusRequest
 {
-    public ProposalStatus NewStatus { get; init; }
+    public ProposalStatus Status { get; init; }
 }
