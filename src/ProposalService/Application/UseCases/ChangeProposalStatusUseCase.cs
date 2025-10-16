@@ -1,6 +1,7 @@
 using ProposalService.Application.Common;
 using ProposalService.Application.DTOs;
 using ProposalService.Domain.Entities;
+using ProposalService.Domain.Events;
 using ProposalService.Domain.Exceptions;
 using ProposalService.Domain.Ports;
 using ProposalService.Domain.ValueObjects;
@@ -11,11 +12,16 @@ public class ChangeProposalStatusUseCase
 {
     private readonly IProposalRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IEventPublisher _eventPublisher;
 
-    public ChangeProposalStatusUseCase(IProposalRepository repository, IUnitOfWork unitOfWork)
+    public ChangeProposalStatusUseCase(
+        IProposalRepository repository,
+        IUnitOfWork unitOfWork,
+        IEventPublisher eventPublisher)
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<Result<ProposalResponse>> ExecuteAsync(
@@ -44,6 +50,25 @@ public class ChangeProposalStatusUseCase
 
             await _repository.UpdateAsync(proposal, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            if (request.Status == ProposalStatus.Aprovada)
+            {
+                var approvedEvent = new ProposalApprovedEvent
+                {
+                    ProposalId = proposal.Id,
+                    FullName = proposal.InsuredPerson.FullName,
+                    Cpf = proposal.InsuredPerson.Cpf,
+                    Email = proposal.InsuredPerson.Email,
+                    CoverageType = proposal.CoverageType,
+                    InsuredAmount = proposal.InsuredAmount,
+                    ApprovedAt = DateTime.UtcNow
+                };
+
+                await _eventPublisher.PublishAsync(
+                    approvedEvent,
+                    "proposal.approved",
+                    cancellationToken);
+            }
 
             var response = MapToResponse(proposal);
             return Result<ProposalResponse>.Success(response);

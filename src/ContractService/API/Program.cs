@@ -1,10 +1,14 @@
-﻿using ContractService.Application.UseCases;
+﻿using ContractService.API.Workers;
+using ContractService.Application.UseCases;
 using ContractService.Domain.Ports;
 using ContractService.Infrastructure.HttpClients;
+using ContractService.Infrastructure.Messaging;
 using ContractService.Infrastructure.Persistence;
 using ContractService.Infrastructure.Repositories;
 
 using Microsoft.EntityFrameworkCore;
+
+using RabbitMQ.Client;
 
 using System.Text.Json.Serialization;
 
@@ -46,11 +50,37 @@ builder.Services.AddHttpClient<IProposalClient, ProposalHttpClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+var rabbitMqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+var rabbitMqPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
+var rabbitMqUsername = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+var rabbitMqPassword = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
+builder.Services.AddSingleton<IConnection>(sp =>
+{
+    var factory = new ConnectionFactory
+    {
+        HostName = rabbitMqHost,
+        Port = rabbitMqPort,
+        UserName = rabbitMqUsername,
+        Password = rabbitMqPassword
+    };
+    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+});
+
+builder.Services.AddSingleton<IMessageConsumer, RabbitMqProposalConsumer>();
+builder.Services.AddHostedService<MessageConsumerWorker>();
+
 builder.Services.AddScoped<CreateContractUseCase>();
 builder.Services.AddScoped<GetContractByIdUseCase>();
 builder.Services.AddScoped<GetAllContractsUseCase>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ContractDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 if (app.Environment.IsDevelopment())
 {

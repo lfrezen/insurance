@@ -1,0 +1,24 @@
+bin/
+obj/
+*.user
+.vs/
+.vscode/
+*.suo
+*.cache
+*.log
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
