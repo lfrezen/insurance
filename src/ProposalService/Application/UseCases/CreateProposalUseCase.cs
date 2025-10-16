@@ -1,3 +1,5 @@
+using FluentValidation;
+
 using ProposalService.Application.Common;
 using ProposalService.Application.DTOs;
 using ProposalService.Domain.Entities;
@@ -10,17 +12,29 @@ public class CreateProposalUseCase
 {
     private readonly IProposalRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IValidator<CreateProposalRequest> _validator;
 
-    public CreateProposalUseCase(IProposalRepository repository, IUnitOfWork unitOfWork)
+    public CreateProposalUseCase(
+        IProposalRepository repository,
+        IUnitOfWork unitOfWork,
+        IValidator<CreateProposalRequest> validator)
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _validator = validator;
     }
 
     public async Task<Result<ProposalResponse>> ExecuteAsync(
         CreateProposalRequest request,
         CancellationToken cancellationToken = default)
     {
+        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+            return Result<ProposalResponse>.Failure(errors);
+        }
+
         try
         {
             var insuredPerson = new InsuredPerson(

@@ -1,9 +1,12 @@
 using FluentAssertions;
 
+using FluentValidation;
+
 using Moq;
 
 using ProposalService.Application.DTOs;
 using ProposalService.Application.UseCases;
+using ProposalService.Application.Validators;
 using ProposalService.Domain.Entities;
 using ProposalService.Domain.Ports;
 using ProposalService.Domain.ValueObjects;
@@ -14,13 +17,15 @@ public class CreateProposalUseCaseTests
 {
     private readonly Mock<IProposalRepository> _mockRepository;
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
+    private readonly IValidator<CreateProposalRequest> _validator;
     private readonly CreateProposalUseCase _useCase;
 
     public CreateProposalUseCaseTests()
     {
         _mockRepository = new Mock<IProposalRepository>();
         _mockUnitOfWork = new Mock<IUnitOfWork>();
-        _useCase = new CreateProposalUseCase(_mockRepository.Object, _mockUnitOfWork.Object);
+        _validator = new CreateProposalRequestValidator();
+        _useCase = new CreateProposalUseCase(_mockRepository.Object, _mockUnitOfWork.Object, _validator);
     }
 
     [Fact]
@@ -29,7 +34,7 @@ public class CreateProposalUseCaseTests
         var request = new CreateProposalRequest
         {
             FullName = "John Doe",
-            Cpf = "12345678900",
+            Cpf = "07577961094",
             Email = "john@email.com",
             CoverageType = "Vida",
             InsuredAmount = 100000m

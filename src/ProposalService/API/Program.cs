@@ -1,8 +1,11 @@
 ﻿using System.Text.Json.Serialization;
 
+using FluentValidation;
+
 using Microsoft.EntityFrameworkCore;
 
 using ProposalService.Application.UseCases;
+using ProposalService.Application.Validators;
 using ProposalService.Domain.Ports;
 using ProposalService.Infrastructure.Messaging;
 using ProposalService.Infrastructure.Persistence;
@@ -40,6 +43,8 @@ builder.Services.AddDbContext<ProposalDbContext>(options =>
 
 builder.Services.AddScoped<IProposalRepository, ProposalRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+builder.Services.AddValidatorsFromAssemblyContaining<CreateProposalRequestValidator>();
 
 var rabbitMqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
 var rabbitMqPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");

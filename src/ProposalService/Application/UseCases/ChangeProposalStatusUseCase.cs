@@ -1,3 +1,5 @@
+using FluentValidation;
+
 using ProposalService.Application.Common;
 using ProposalService.Application.DTOs;
 using ProposalService.Domain.Entities;
@@ -13,15 +15,18 @@ public class ChangeProposalStatusUseCase
     private readonly IProposalRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEventPublisher _eventPublisher;
+    private readonly IValidator<ChangeProposalStatusRequest> _validator;
 
     public ChangeProposalStatusUseCase(
         IProposalRepository repository,
         IUnitOfWork unitOfWork,
-        IEventPublisher eventPublisher)
+        IEventPublisher eventPublisher,
+        IValidator<ChangeProposalStatusRequest> validator)
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
         _eventPublisher = eventPublisher;
+        _validator = validator;
     }
 
     public async Task<Result<ProposalResponse>> ExecuteAsync(
@@ -29,6 +34,13 @@ public class ChangeProposalStatusUseCase
         ChangeProposalStatusRequest request,
         CancellationToken cancellationToken = default)
     {
+        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+            return Result<ProposalResponse>.Failure(errors);
+        }
+
         try
         {
             var proposal = await _repository.GetByIdAsync(id, cancellationToken);

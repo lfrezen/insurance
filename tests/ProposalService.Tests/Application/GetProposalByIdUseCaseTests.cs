@@ -24,7 +24,7 @@ public class GetProposalByIdUseCaseTests
     public async Task ExecuteAsync_ShouldReturnProposal_WhenProposalExists()
     {
         var proposalId = Guid.NewGuid();
-        var insuredPerson = new InsuredPerson("John Doe", "12345678900", "john@email.com");
+        var insuredPerson = new InsuredPerson("John Doe", "07577961094", "john@email.com");
         var proposal = Proposal.Create(insuredPerson, "Vida", 100000m);
 
         _mockRepository.Setup(x => x.GetByIdAsync(proposalId, It.IsAny<CancellationToken>()))

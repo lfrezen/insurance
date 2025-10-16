@@ -161,7 +161,7 @@ Content-Type: application/json
 
 {
   "fullName": "João Silva",
-  "cpf": "12345678900",
+  "cpf": "07577961094",
   "email": "joao@email.com",
   "coverageType": "Vida",
   "insuredAmount": 100000

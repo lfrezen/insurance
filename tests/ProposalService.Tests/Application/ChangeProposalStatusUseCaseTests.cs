@@ -1,9 +1,12 @@
 using FluentAssertions;
 
+using FluentValidation;
+
 using Moq;
 
 using ProposalService.Application.DTOs;
 using ProposalService.Application.UseCases;
+using ProposalService.Application.Validators;
 using ProposalService.Domain.Entities;
 using ProposalService.Domain.Ports;
 using ProposalService.Domain.ValueObjects;
@@ -14,20 +17,28 @@ public class ChangeProposalStatusUseCaseTests
 {
     private readonly Mock<IProposalRepository> _mockRepository;
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
+    private readonly Mock<IEventPublisher> _mockEventPublisher;
+    private readonly IValidator<ChangeProposalStatusRequest> _validator;
     private readonly ChangeProposalStatusUseCase _useCase;
 
     public ChangeProposalStatusUseCaseTests()
     {
         _mockRepository = new Mock<IProposalRepository>();
         _mockUnitOfWork = new Mock<IUnitOfWork>();
-        _useCase = new ChangeProposalStatusUseCase(_mockRepository.Object, _mockUnitOfWork.Object);
+        _mockEventPublisher = new Mock<IEventPublisher>();
+        _validator = new ChangeProposalStatusRequestValidator();
+        _useCase = new ChangeProposalStatusUseCase(
+            _mockRepository.Object,
+            _mockUnitOfWork.Object,
+            _mockEventPublisher.Object,
+            _validator);
     }
 
     [Fact]
     public async Task ExecuteAsync_ShouldApproveProposal_WhenStatusIsAprovada()
     {
         var proposalId = Guid.NewGuid();
-        var insuredPerson = new InsuredPerson("John Doe", "12345678900", "john@email.com");
+        var insuredPerson = new InsuredPerson("John Doe", "07577961094", "john@email.com");
         var proposal = Proposal.Create(insuredPerson, "Vida", 100000m);
 
         _mockRepository.Setup(x => x.GetByIdAsync(proposalId, It.IsAny<CancellationToken>()))
@@ -49,7 +60,7 @@ public class ChangeProposalStatusUseCaseTests
     public async Task ExecuteAsync_ShouldRejectProposal_WhenStatusIsRejeitada()
     {
         var proposalId = Guid.NewGuid();
-        var insuredPerson = new InsuredPerson("John Doe", "12345678900", "john@email.com");
+        var insuredPerson = new InsuredPerson("John Doe", "07577961094", "john@email.com");
         var proposal = Proposal.Create(insuredPerson, "Vida", 100000m);
 
         _mockRepository.Setup(x => x.GetByIdAsync(proposalId, It.IsAny<CancellationToken>()))
