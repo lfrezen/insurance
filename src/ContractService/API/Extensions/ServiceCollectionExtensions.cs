@@ -8,6 +8,9 @@ using ContractService.Infrastructure.Repositories;
 
 using Microsoft.EntityFrameworkCore;
 
+using Polly;
+using Polly.Extensions.Http;
+
 using RabbitMQ.Client;
 
 namespace ContractService.API.Extensions;
@@ -41,9 +44,46 @@ public static class ServiceCollectionExtensions
             client.BaseAddress = new Uri(configuration["ProposalService:BaseUrl"]
                 ?? "http://localhost:5009");
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        })
+        .AddPolicyHandler(GetRetryPolicy())
+        .AddPolicyHandler(GetCircuitBreakerPolicy());
 
         return services;
+    }
+
+    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+    {
+        return HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+            .WaitAndRetryAsync(
+                retryCount: 3,
+                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                onRetry: (outcome, timespan, retryCount, context) =>
+                {
+                    Console.WriteLine($"[Polly Retry] Attempt {retryCount} after {timespan.TotalSeconds}s delay. Reason: {outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString()}");
+                });
+    }
+
+    private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
+    {
+        return HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .CircuitBreakerAsync(
+                handledEventsAllowedBeforeBreaking: 5,
+                durationOfBreak: TimeSpan.FromSeconds(30),
+                onBreak: (outcome, duration) =>
+                {
+                    Console.WriteLine($"[Polly Circuit Breaker] Circuit opened for {duration.TotalSeconds}s. Reason: {outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString()}");
+                },
+                onReset: () =>
+                {
+                    Console.WriteLine("[Polly Circuit Breaker] Circuit closed. Requests will be allowed.");
+                },
+                onHalfOpen: () =>
+                {
+                    Console.WriteLine("[Polly Circuit Breaker] Circuit half-open. Testing with next request.");
+                });
     }
 
     public static IServiceCollection AddRabbitMqConfiguration(
